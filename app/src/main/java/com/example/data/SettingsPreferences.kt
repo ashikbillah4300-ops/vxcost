@@ -20,8 +20,8 @@ enum class ClipMicMixMode(val label: String) {
 }
 
 data class VoxCastSettings(
-    val micGain: Float = 1.6f,
-    val feedbackGuard: Boolean = true,
+    val micGain: Float = 2.2f,
+    val feedbackGuard: Boolean = false,
     val megaphoneHornFilter: Boolean = false,
     val holdToTalkMode: Boolean = false,
     val selectedPresetId: String = "NATURAL",
@@ -39,7 +39,7 @@ class SettingsPreferences(private val context: Context) {
 
     private object Keys {
         val MIC_GAIN = floatPreferencesKey("mic_gain")
-        val FEEDBACK_GUARD = booleanPreferencesKey("feedback_guard")
+        val FEEDBACK_GUARD = booleanPreferencesKey("echo_guard_v2")
         val MEGAPHONE_HORN = booleanPreferencesKey("megaphone_horn")
         val HOLD_TO_TALK = booleanPreferencesKey("hold_to_talk")
         val PRESET_ID = stringPreferencesKey("preset_id")
@@ -59,8 +59,8 @@ class SettingsPreferences(private val context: Context) {
             .getOrDefault(ClipMicMixMode.MIX_BOTH)
 
         VoxCastSettings(
-            micGain = prefs[Keys.MIC_GAIN] ?: 1.6f,
-            feedbackGuard = prefs[Keys.FEEDBACK_GUARD] ?: true,
+            micGain = prefs[Keys.MIC_GAIN] ?: 2.2f,
+            feedbackGuard = prefs[Keys.FEEDBACK_GUARD] ?: false,
             megaphoneHornFilter = prefs[Keys.MEGAPHONE_HORN] ?: false,
             holdToTalkMode = prefs[Keys.HOLD_TO_TALK] ?: false,
             selectedPresetId = prefs[Keys.PRESET_ID] ?: "NATURAL",
@@ -78,8 +78,8 @@ class SettingsPreferences(private val context: Context) {
     suspend fun update(transform: (VoxCastSettings) -> VoxCastSettings) {
         context.dataStore.edit { prefs ->
             val current = VoxCastSettings(
-                micGain = prefs[Keys.MIC_GAIN] ?: 1.6f,
-                feedbackGuard = prefs[Keys.FEEDBACK_GUARD] ?: true,
+                micGain = prefs[Keys.MIC_GAIN] ?: 2.2f,
+                feedbackGuard = prefs[Keys.FEEDBACK_GUARD] ?: false,
                 megaphoneHornFilter = prefs[Keys.MEGAPHONE_HORN] ?: false,
                 holdToTalkMode = prefs[Keys.HOLD_TO_TALK] ?: false,
                 selectedPresetId = prefs[Keys.PRESET_ID] ?: "NATURAL",

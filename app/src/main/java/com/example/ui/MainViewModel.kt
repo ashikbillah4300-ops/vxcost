@@ -85,7 +85,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun seekClipTo(positionMs: Long) = controller.seekClipTo(positionMs)
 
-    fun toggleRecordClip() = controller.toggleRecordClip()
+    fun toggleRecordClip() = controller.toggleRecordClip(autoPlayOnSave = false)
+
+    fun toggleRecordVoicePreview() = controller.toggleRecordClip(autoPlayOnSave = true)
 
     fun renameClip(clip: AudioClipEntity, newTitle: String) {
         viewModelScope.launch {

@@ -238,20 +238,31 @@ class VoxCastController(private val application: Application) {
         engine.seekClipTo(positionMs)
     }
 
-    fun toggleRecordClip() {
+    fun toggleRecordClip(autoPlayOnSave: Boolean = false) {
         if (telemetry.value.isRecordingClip) {
             engine.stopRecordingClip()
         } else {
             val file = repository.createRecordingFile()
+            val presetName = VoicePreset.fromId(settings.value.selectedPresetId).displayName
             engine.startRecordingClip(file) { savedFile, durationMs ->
                 scope.launch {
                     val count = clips.value.count { it.category == "Recorded" } + 1
+                    val title = if (autoPlayOnSave) {
+                        "$presetName Test #$count"
+                    } else {
+                        "Mic Clip #$count"
+                    }
                     val clip = repository.registerRecordedClip(
                         file = savedFile,
-                        title = "Mic Clip #$count",
+                        title = title,
                         durationMs = durationMs
                     )
-                    _statusBanner.value = "Saved \"${clip.title}\""
+                    if (autoPlayOnSave) {
+                        engine.playClip(clip)
+                        _statusBanner.value = "Playing \"$title\""
+                    } else {
+                        _statusBanner.value = "Saved \"${clip.title}\""
+                    }
                 }
             }
         }

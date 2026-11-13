@@ -41,8 +41,8 @@ class VoiceDspProcessorTest {
             dsp.echoMix = preset.echoMix
             dsp.robotMix = preset.robotMix
             dsp.hornFilter = preset.hornFilter
-            dsp.gain = 1.5f
-            dsp.noiseGateEnabled = true
+            dsp.gain = 2.0f
+            dsp.noiseGateEnabled = false
 
             dsp.processFrame(input, length, output)
             val db = VoiceDspProcessor.computeTelemetry(output, length, bars)
@@ -50,6 +50,45 @@ class VoiceDspProcessorTest {
             assertTrue("Preset ${preset.id} output should not be silent ($db dB)", db > -40f)
             assertTrue("Preset ${preset.id} output must stay bounded", output.all { it in -1f..1f && !it.isNaN() })
         }
+    }
+
+    @Test
+    fun pitchShifterShiftsFrequencyUpForFemaleAndDownForMale() {
+        val sampleRate = 44100
+        val totalSamples = sampleRate // 1 second
+        val inputFreq = 200.0
+        val input = ShortArray(totalSamples) { i ->
+            (sin(2.0 * PI * inputFreq * i / sampleRate) * 14000.0).toInt().toShort()
+        }
+
+        fun measureOutputFreq(semitones: Float): Double {
+            val dsp = VoiceDspProcessor(sampleRate).apply {
+                pitchSemitones = semitones
+                formantTone = 0f
+                echoMix = 0f
+                robotMix = 0f
+                hornFilter = false
+                gain = 1.0f
+                noiseGateEnabled = false
+            }
+            val output = FloatArray(totalSamples)
+            dsp.processFrame(input, totalSamples, output)
+
+            // Skip initial buffer fill (4096 samples) and count positive-going zero crossings
+            val start = 8192
+            var crossings = 0
+            for (i in (start + 1) until totalSamples) {
+                if (output[i - 1] <= 0f && output[i] > 0f) crossings++
+            }
+            val durationSec = (totalSamples - start).toDouble() / sampleRate
+            return crossings / durationSec
+        }
+
+        val femaleFreq = measureOutputFreq(VoicePreset.FEMALE.pitchSemitones)
+        val maleFreq = measureOutputFreq(VoicePreset.MALE.pitchSemitones)
+
+        assertTrue("Female pitch ($femaleFreq Hz) should be significantly above $inputFreq Hz", femaleFreq > 265.0)
+        assertTrue("Male pitch ($maleFreq Hz) should be significantly below $inputFreq Hz", maleFreq < 160.0)
     }
 
     @Test

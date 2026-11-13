@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -99,6 +100,7 @@ fun SoundboardScreen(
     onToggleLoop: () -> Unit,
     onSeekClip: (Long) -> Unit,
     onRenameClip: (AudioClipEntity, String) -> Unit,
+    onShareClip: (AudioClipEntity) -> Unit,
     onDeleteClip: (AudioClipEntity) -> Unit,
     onRouteClipThroughFxChange: (Boolean) -> Unit,
     onMixModeChange: (ClipMicMixMode) -> Unit,
@@ -397,6 +399,11 @@ fun SoundboardScreen(
                             ),
                             modifier = Modifier.testTag("clip_gain_slider")
                         )
+                        Text(
+                            text = "Note: Clips play through your Phone Speaker, Bluetooth Speaker, or AUX. Android blocks injecting app audio directly into phone/WhatsApp call mics—tap Share on any clip to send it in chat.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextMuted
+                        )
                     }
                 }
             }
@@ -531,6 +538,19 @@ fun SoundboardScreen(
                                         color = TextSecondary
                                     )
                                 }
+                            }
+
+                            IconButton(
+                                onClick = { onShareClip(clip) },
+                                modifier = Modifier
+                                    .minimumInteractiveComponentSize()
+                                    .testTag("share_clip_${clip.id}")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Share,
+                                    contentDescription = "Share clip",
+                                    tint = ElectricCyan
+                                )
                             }
 
                             IconButton(

@@ -46,20 +46,31 @@ class BroadcastForegroundService : Service() {
                 val hasMic = intent.getBooleanExtra(EXTRA_HAS_MIC, true)
                 createNotificationChannel()
                 val notification = buildNotification(hasMic)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && hasMic) {
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+                val started = runCatching {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && hasMic) {
+                            ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                        } else {
                             ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-                    } else 0
-                    if (fgsType != 0) {
+                        }
                         startForeground(NOTIFICATION_ID, notification, fgsType)
                     } else {
                         startForeground(NOTIFICATION_ID, notification)
                     }
-                } else {
-                    startForeground(NOTIFICATION_ID, notification)
+                }.isSuccess
+                if (!started) {
+                    runCatching {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            startForeground(
+                                NOTIFICATION_ID,
+                                notification,
+                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                            )
+                        } else {
+                            startForeground(NOTIFICATION_ID, notification)
+                        }
+                    }.onFailure { stopSelf() }
                 }
             }
         }

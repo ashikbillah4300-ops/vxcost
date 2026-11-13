@@ -23,12 +23,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.BluetoothAudio
 import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -219,7 +219,7 @@ fun BroadcastStatusHeader(
                         imageVector = when {
                             outputRoute.isBluetooth -> Icons.Rounded.BluetoothAudio
                             outputRoute.isWired -> Icons.Rounded.Headphones
-                            else -> Icons.Rounded.VolumeUp
+                            else -> Icons.AutoMirrored.Rounded.VolumeUp
                         },
                         contentDescription = "Audio output route",
                         tint = if (outputRoute.isBluetooth) EmeraldSignal else ElectricCyan,

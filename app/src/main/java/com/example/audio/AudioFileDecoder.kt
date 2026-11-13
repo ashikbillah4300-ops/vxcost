@@ -183,6 +183,7 @@ class StreamingAudioClipPlayer(
     fun readMonoFrame(dest: ShortArray, count: Int): Int {
         val c = codec ?: return 0
         var written = 0
+        var emptyIterations = 0
 
         while (written < count) {
             if (leftoverOffset < leftoverMono.size) {
@@ -190,12 +191,14 @@ class StreamingAudioClipPlayer(
                 System.arraycopy(leftoverMono, leftoverOffset, dest, written, toCopy)
                 written += toCopy
                 leftoverOffset += toCopy
+                emptyIterations = 0
                 continue
             }
 
             if (outputDone) {
                 if (isLooping) {
                     seekTo(0L)
+                    emptyIterations = 0
                     continue
                 } else {
                     isFinished = true
@@ -203,7 +206,19 @@ class StreamingAudioClipPlayer(
                 }
             }
 
+            val beforeSize = leftoverMono.size - leftoverOffset
             decodeMore(c)
+            val afterSize = leftoverMono.size - leftoverOffset
+            if (afterSize <= beforeSize && !outputDone) {
+                emptyIterations++
+                if (emptyIterations > 250) {
+                    outputDone = true
+                    isFinished = true
+                    break
+                }
+            } else {
+                emptyIterations = 0
+            }
         }
         return written
     }

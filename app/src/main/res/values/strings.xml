@@ -14,8 +14,8 @@
     <string name="mic_permission_title">Microphone Access Needed</string>
     <string name="mic_permission_desc">VoxCast needs microphone access to amplify your voice, apply real-time voice effects, and record soundboard announcements.</string>
     <string name="mic_permission_grant">Enable Microphone</string>
-    <string name="feedback_guard_title">Feedback Guard</string>
-    <string name="feedback_guard_desc">Reduces speaker screech &amp; suppresses background noise</string>
+    <string name="feedback_guard_title">Echo Guard (AEC)</string>
+    <string name="feedback_guard_desc">Enable only if phone speaker screeches; keeps raw mic loud when OFF</string>
     <string name="route_speaker_tip">Tip: Connect a Bluetooth speaker or AUX cable for maximum volume without feedback.</string>
     <string name="floating_display_title">Float Over Display</string>
     <string name="floating_display_desc">Keep a draggable mini-controller floating on top of all apps when ON</string>

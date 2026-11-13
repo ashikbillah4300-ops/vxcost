@@ -23,20 +23,20 @@ enum class VoicePreset(
     FEMALE(
         id = "FEMALE",
         displayName = "Female Voice",
-        subtitle = "Higher pitch & airy tone",
-        pitchSemitones = 4.8f,
-        formantTone = 0.65f,
-        echoMix = 0.04f,
+        subtitle = "Higher pitch & bright tone",
+        pitchSemitones = 6.5f,
+        formantTone = 0.80f,
+        echoMix = 0.03f,
         robotMix = 0f,
         hornFilter = false
     ),
     MALE(
         id = "MALE",
         displayName = "Male Voice",
-        subtitle = "Lower pitch & chest warmth",
-        pitchSemitones = -4.5f,
-        formantTone = -0.60f,
-        echoMix = 0.04f,
+        subtitle = "Deep pitch & chest warmth",
+        pitchSemitones = -5.5f,
+        formantTone = -0.75f,
+        echoMix = 0.03f,
         robotMix = 0f,
         hornFilter = false
     ),
@@ -44,8 +44,8 @@ enum class VoicePreset(
         id = "KID",
         displayName = "Young / Kid",
         subtitle = "Playful bright high voice",
-        pitchSemitones = 7.5f,
-        formantTone = 0.80f,
+        pitchSemitones = 9.0f,
+        formantTone = 0.90f,
         echoMix = 0f,
         robotMix = 0f,
         hornFilter = false
@@ -54,8 +54,8 @@ enum class VoicePreset(
         id = "DEEP_GIANT",
         displayName = "Deep Bass",
         subtitle = "Heavy announcer resonance",
-        pitchSemitones = -7.5f,
-        formantTone = -0.85f,
+        pitchSemitones = -8.5f,
+        formantTone = -0.90f,
         echoMix = 0.14f,
         robotMix = 0f,
         hornFilter = false
@@ -75,9 +75,9 @@ enum class VoicePreset(
         displayName = "Cyber Robot",
         subtitle = "Metallic synth modulation",
         pitchSemitones = -1.5f,
-        formantTone = 0.20f,
+        formantTone = 0.25f,
         echoMix = 0.12f,
-        robotMix = 0.78f,
+        robotMix = 0.80f,
         hornFilter = true
     ),
     CUSTOM(

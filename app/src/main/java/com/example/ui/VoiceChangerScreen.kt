@@ -24,11 +24,13 @@ import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Face
 import androidx.compose.material.icons.rounded.Face3
+import androidx.compose.material.icons.rounded.FiberManualRecord
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MicOff
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.SmartToy
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +38,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -73,6 +76,7 @@ fun VoiceChangerScreen(
     hasMicPermission: Boolean,
     onRequestMicPermission: () -> Unit,
     onToggleMic: () -> Unit,
+    onToggleRecordPreview: () -> Unit,
     onSelectPreset: (VoicePreset) -> Unit,
     onCustomPitchChange: (Float) -> Unit,
     onCustomToneChange: (Float) -> Unit,
@@ -127,25 +131,24 @@ fun VoiceChangerScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "REAL-TIME VOICE CHANGER",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = ElectricCyan
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "${activePreset.displayName} (${formatSemitones(effectivePitch)})",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = TextPrimary
+                        )
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "REAL-TIME VOICE CHANGER",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = ElectricCyan
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "${activePreset.displayName} (${formatSemitones(effectivePitch)})",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = TextPrimary
-                            )
-                        }
-
                         Button(
                             onClick = {
                                 if (!hasMicPermission) onRequestMicPermission() else onToggleMic()
@@ -156,6 +159,7 @@ fun VoiceChangerScreen(
                             ),
                             shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
+                                .weight(1f)
                                 .height(48.dp)
                                 .testTag("voice_fx_live_toggle")
                         ) {
@@ -165,7 +169,48 @@ fun VoiceChangerScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = if (telemetry.isMicLive) "LIVE ON" else "TEST LIVE",
+                                text = if (telemetry.isMicLive) "LIVE ON" else "LIVE MIC",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                if (!hasMicPermission) onRequestMicPermission() else onToggleRecordPreview()
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(
+                                1.dp,
+                                if (telemetry.isRecordingClip) BroadcastOrange else ElectricCyan.copy(alpha = 0.65f)
+                            ),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (telemetry.isRecordingClip) {
+                                    BroadcastOrange.copy(alpha = 0.16f)
+                                } else {
+                                    ConsoleSurfaceElevated
+                                },
+                                contentColor = if (telemetry.isRecordingClip) BroadcastOrange else ElectricCyan
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("voice_fx_record_preview")
+                        ) {
+                            Icon(
+                                imageVector = if (telemetry.isRecordingClip) {
+                                    Icons.Rounded.Stop
+                                } else {
+                                    Icons.Rounded.FiberManualRecord
+                                },
+                                contentDescription = "Record and play voice preview"
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (telemetry.isRecordingClip) {
+                                    "PLAY (${telemetry.recordingSeconds}s)"
+                                } else {
+                                    "TEST & HEAR"
+                                },
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
@@ -173,7 +218,7 @@ fun VoiceChangerScreen(
 
                     LiveWaveformCanvas(
                         bars = telemetry.waveformBars,
-                        isActive = telemetry.isMicLive,
+                        isActive = telemetry.isMicLive || telemetry.isRecordingClip || telemetry.isClipPlaying,
                         accentColor = presetAccentColor(activePreset),
                         modifier = Modifier
                             .fillMaxWidth()

@@ -352,7 +352,7 @@ class MegaphoneEngine(private val context: Context) {
                 .setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
                 .setAudioFormat(
@@ -370,6 +370,9 @@ class MegaphoneEngine(private val context: Context) {
                     }
                 }
                 .build()
+                .apply {
+                    setVolume(1.0f)
+                }
         } catch (e: Exception) {
             _telemetry.update { it.copy(errorMessage = "Audio output error: ${e.message}") }
             return
@@ -380,13 +383,8 @@ class MegaphoneEngine(private val context: Context) {
         var ns: NoiseSuppressor? = null
         var lastGuardState = currentSettings.feedbackGuard
 
-        fun openAudioRecord(guardEnabled: Boolean): AudioRecord? {
+        fun tryCreateRecord(source: Int, enableFx: Boolean): AudioRecord? {
             return try {
-                val source = if (guardEnabled) {
-                    MediaRecorder.AudioSource.VOICE_COMMUNICATION
-                } else {
-                    MediaRecorder.AudioSource.MIC
-                }
                 val rec = AudioRecord(
                     source,
                     sampleRate,
@@ -395,7 +393,7 @@ class MegaphoneEngine(private val context: Context) {
                     minRecBuf
                 )
                 if (rec.state == AudioRecord.STATE_INITIALIZED) {
-                    if (guardEnabled) {
+                    if (enableFx) {
                         if (AcousticEchoCanceler.isAvailable()) {
                             aec = AcousticEchoCanceler.create(rec.audioSessionId)?.apply { enabled = true }
                         }
@@ -404,7 +402,12 @@ class MegaphoneEngine(private val context: Context) {
                         }
                     }
                     rec.startRecording()
-                    rec
+                    if (rec.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                        rec
+                    } else {
+                        rec.release()
+                        null
+                    }
                 } else {
                     rec.release()
                     null
@@ -416,6 +419,25 @@ class MegaphoneEngine(private val context: Context) {
             } catch (_: Exception) {
                 null
             }
+        }
+
+        fun openAudioRecord(guardEnabled: Boolean): AudioRecord? {
+            val primary = if (guardEnabled) {
+                tryCreateRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, enableFx = true)
+                    ?: tryCreateRecord(MediaRecorder.AudioSource.MIC, enableFx = false)
+            } else {
+                tryCreateRecord(MediaRecorder.AudioSource.MIC, enableFx = false)
+            }
+            if (primary == null && (micRequested || recordingFile != null)) {
+                micRequested = false
+                _telemetry.update {
+                    it.copy(
+                        isMicLive = false,
+                        errorMessage = "Microphone is busy (another app or phone call is using it)."
+                    )
+                }
+            }
+            return primary
         }
 
         fun closeAudioRecord() {
@@ -443,6 +465,7 @@ class MegaphoneEngine(private val context: Context) {
         var micStartTimeMs = 0L
         var recStartTimeMs = 0L
         var lastUiPushMs = 0L
+        var consecutiveZeroReads = 0
 
         try {
             while (micRequested || clipRequested || alertSynthesizer.activeTone != null || recordingFile != null) {
@@ -500,6 +523,23 @@ class MegaphoneEngine(private val context: Context) {
                 if (needMic && audioRecord != null) {
                     val read = audioRecord!!.read(micShort, 0, frameSize)
                     if (read > 0) {
+                        var nonZero = false
+                        for (i in 0 until read) {
+                            if (micShort[i] != 0.toShort()) {
+                                nonZero = true
+                                break
+                            }
+                        }
+                        if (!nonZero) {
+                            consecutiveZeroReads++
+                            if (consecutiveZeroReads == 90) {
+                                _telemetry.update {
+                                    it.copy(errorMessage = "No mic audio detected (another app or call may be locking the mic).")
+                                }
+                            }
+                        } else {
+                            consecutiveZeroReads = 0
+                        }
                         micActiveNow = true
                         micDsp.processFrame(micShort, read, micFloat)
 
@@ -578,7 +618,7 @@ class MegaphoneEngine(private val context: Context) {
                         outShort[i] = (limited * 32767f).toInt().coerceIn(-32768, 32767).toShort()
                     }
                     audioTrack.write(outShort, 0, frameSize)
-                } else {
+                } else if (!needMic) {
                     Thread.sleep(10)
                 }
 

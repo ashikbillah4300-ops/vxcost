@@ -58,6 +58,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -76,6 +77,7 @@ import com.example.ui.theme.ObsidianBackground
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.VoxCastTheme
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -338,6 +340,24 @@ fun VoxCastApp(viewModel: MainViewModel = viewModel()) {
                                     onToggleLoop = viewModel::toggleClipLoop,
                                     onSeekClip = viewModel::seekClipTo,
                                     onRenameClip = viewModel::renameClip,
+                                    onShareClip = { clip ->
+                                        runCatching {
+                                            val file = File(clip.filePath)
+                                            val uri = FileProvider.getUriForFile(
+                                                context,
+                                                "${context.packageName}.fileprovider",
+                                                file
+                                            )
+                                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                                type = clip.mimeType.ifBlank { "audio/*" }
+                                                putExtra(Intent.EXTRA_STREAM, uri)
+                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            }
+                                            context.startActivity(
+                                                Intent.createChooser(shareIntent, "Share Audio Clip")
+                                            )
+                                        }
+                                    },
                                     onDeleteClip = viewModel::deleteClip,
                                     onRouteClipThroughFxChange = viewModel::setRouteClipThroughFx,
                                     onMixModeChange = viewModel::setClipMicMixMode,
@@ -354,6 +374,7 @@ fun VoxCastApp(viewModel: MainViewModel = viewModel()) {
                                         micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     },
                                     onToggleMic = viewModel::toggleMicBroadcast,
+                                    onToggleRecordPreview = viewModel::toggleRecordVoicePreview,
                                     onSelectPreset = viewModel::selectVoicePreset,
                                     onCustomPitchChange = viewModel::setCustomPitchSemitones,
                                     onCustomToneChange = viewModel::setCustomFormantTone,

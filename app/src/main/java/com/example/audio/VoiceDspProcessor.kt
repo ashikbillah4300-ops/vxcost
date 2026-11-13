@@ -22,7 +22,7 @@ class VoiceDspProcessor(private val sampleRate: Int = 44100) {
     private val pitchBufSize = 4096
     private val pitchBufMask = pitchBufSize - 1
     private val pitchBuffer = FloatArray(pitchBufSize)
-    private val windowSize = 2048f
+    private val windowSize = 1024f
     private var writeIndex = 0
     private var phase = 0f
 
@@ -53,8 +53,8 @@ class VoiceDspProcessor(private val sampleRate: Int = 44100) {
     @Volatile var echoMix: Float = 0f
     @Volatile var robotMix: Float = 0f
     @Volatile var hornFilter: Boolean = false
-    @Volatile var gain: Float = 1.5f
-    @Volatile var noiseGateEnabled: Boolean = true
+    @Volatile var gain: Float = 2.0f
+    @Volatile var noiseGateEnabled: Boolean = false
 
     fun reset() {
         pitchBuffer.fill(0f)
@@ -98,7 +98,7 @@ class VoiceDspProcessor(private val sampleRate: Int = 44100) {
         for (i in 0 until length) {
             var sample = input[i] / 32768f
 
-            // 1. Noise gate (smooth envelope)
+            // 1. Noise gate (gentle envelope so normal speech is never muted)
             if (gateOn) {
                 val absS = abs(sample)
                 gateEnvelope = if (absS > gateEnvelope) {
@@ -106,9 +106,9 @@ class VoiceDspProcessor(private val sampleRate: Int = 44100) {
                 } else {
                     0.002f * absS + 0.998f * gateEnvelope
                 }
-                val gateThreshold = 0.008f
+                val gateThreshold = 0.0025f
                 val gateGain = if (gateEnvelope < gateThreshold) {
-                    (gateEnvelope / gateThreshold).pow(2f).coerceIn(0.05f, 1f)
+                    (gateEnvelope / gateThreshold).pow(2f).coerceIn(0.15f, 1f)
                 } else {
                     1f
                 }
