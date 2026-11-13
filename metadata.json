@@ -1,0 +1,6 @@
+{
+  "name": "VoxCast",
+  "description": "Live megaphone voice broadcaster, audio soundboard mixer, and real-time voice changer studio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">VoxCast</string>
+    <string name="nav_megaphone">Megaphone</string>
+    <string name="nav_soundboard">Soundboard</string>
+    <string name="nav_voice_fx">Voice FX</string>
+    <string name="status_on_air">ON AIR</string>
+    <string name="status_standby">STANDBY</string>
+    <string name="status_playing_audio">BROADCASTING CLIP</string>
+    <string name="btn_start_broadcast">GO LIVE</string>
+    <string name="btn_stop_broadcast">STOP MIC</string>
+    <string name="btn_hold_to_talk">HOLD TO TALK</string>
+    <string name="btn_upload_audio">Upload Audio</string>
+    <string name="btn_record_clip">Record Clip</string>
+    <string name="mic_permission_title">Microphone Access Needed</string>
+    <string name="mic_permission_desc">VoxCast needs microphone access to amplify your voice, apply real-time voice effects, and record soundboard announcements.</string>
+    <string name="mic_permission_grant">Enable Microphone</string>
+    <string name="feedback_guard_title">Feedback Guard</string>
+    <string name="feedback_guard_desc">Reduces speaker screech &amp; suppresses background noise</string>
+    <string name="route_speaker_tip">Tip: Connect a Bluetooth speaker or AUX cable for maximum volume without feedback.</string>
+    <string name="floating_display_title">Float Over Display</string>
+    <string name="floating_display_desc">Keep a draggable mini-controller floating on top of all apps when ON</string>
+    <string name="overlay_permission_title">Allow Display Over Apps</string>
+    <string name="overlay_permission_desc">To float the VoxCast mini-controller above other apps while broadcasting, allow "Display over other apps" in Android settings.</string>
+    <string name="overlay_permission_grant">Open Settings</string>
+</resources>
