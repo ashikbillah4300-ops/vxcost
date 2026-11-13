@@ -30,19 +30,45 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Set up Gradle 9.3.1
-        uses: gradle/actions/setup-gradle@v4
+      - name: Cache Gradle & Android dependencies
+        uses: actions/cache@v4
         with:
-          gradle-version: '9.3.1'
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Configure Android SDK & accept licenses
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+
+          SDKMANAGER="$(find "$SDK_ROOT" -name sdkmanager -type f 2>/dev/null | head -n 1)"
+          if [ -z "$SDKMANAGER" ]; then
+            mkdir -p "$SDK_ROOT/cmdline-tools"
+            curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdline-tools.zip
+            unzip -q /tmp/cmdline-tools.zip -d "$SDK_ROOT/cmdline-tools"
+            mv "$SDK_ROOT/cmdline-tools/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
+            SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          fi
+
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" --install "platform-tools" "build-tools;36.0.0" "platforms;android-36" "platforms;android-36.1" || \
+            "$SDKMANAGER" --install "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+
+      - name: Install Gradle 9.3.1
+        run: |
+          curl -fsSL https://services.gradle.org/distributions/gradle-9.3.1-bin.zip -o /tmp/gradle.zip
+          sudo unzip -q -o /tmp/gradle.zip -d /opt
+          echo "/opt/gradle-9.3.1/bin" >> "$GITHUB_PATH"
+          /opt/gradle-9.3.1/bin/gradle --version
 
       - name: Prepare .env and signing keystores
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ ! -f .env ] && [ -f .env.example ]; then
             cp .env.example .env
@@ -54,7 +80,7 @@ jobs:
             keytool -genkeypair -v -keystore debug.keystore \
               -storepass android -alias androiddebugkey -keypass android \
               -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
+              -dname "CN=Android Debug,O=Android,C=US" -noprompt
           fi
 
           if [ -n "$KEYSTORE_BASE64" ]; then
@@ -63,11 +89,15 @@ jobs:
             keytool -genkeypair -v -keystore my-upload-key.jks \
               -storepass "voxcast-ci-pass" -alias upload -keypass "voxcast-ci-pass" \
               -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=VoxCast,O=VoxCast,C=US"
+              -dname "CN=VoxCast,O=VoxCast,C=US" -noprompt
           fi
 
       - name: Run unit tests
-        run: gradle :app:testDebugUnitTest --tests "com.example.VoiceDspProcessorTest" --tests "com.example.ExampleUnitTest"
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'voxcast-ci-pass' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'voxcast-ci-pass' }}
+        run: gradle --no-daemon :app:testDebugUnitTest --tests "com.example.VoiceDspProcessorTest" --tests "com.example.ExampleUnitTest"
 
       - name: Build Debug and Release APKs
         env:
@@ -75,7 +105,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'voxcast-ci-pass' }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'voxcast-ci-pass' }}
         run: |
-          gradle assembleDebug assembleRelease
+          gradle --no-daemon assembleDebug assembleRelease
           mkdir -p dist
           cp app/build/outputs/apk/debug/app-debug.apk dist/VoxCast.apk
           cp app/build/outputs/apk/release/app-release.apk dist/VoxCast-release.apk
@@ -101,9 +131,9 @@ jobs:
             Automated Android APK build from commit `${{ github.sha }}`.
 
             ### Direct Download
-            - **VoxCast.apk** — Recommended for quick installation and seamless updates on Android.
+            - **VoxCast.apk** — Recommended for quick installation and updates on Android.
             - **VoxCast-release.apk** — Release build APK.
-          make_latest: true
+          make_latest: 'true'
           files: |
             dist/VoxCast.apk
             dist/VoxCast-release.apk
